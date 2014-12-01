@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>sug使用</title>
+</head>
+<body>
+<style>
+body {
+    margin: 0;
+    padding: 0;
+}
+.sug-form {
+    position: relative;
+}
+#sug {
+    margin-left: 10px;
+    padding-left: 7px;
+}
+#sug:focus {
+    outline: none;
+}
+</style>
+<div class="sug-form">
+    <input type="text" id="sug" name="sug" autocomplete="false">
+</div>
+<script src="http://cdn.staticfile.org/jquery/1.10.0/jquery.min.js"></script>
+<script src="./sug.js"></script>
+<script src="./data.js"></script>
+<script>
+window.onload = function() {
+    var sug = new bds.util.sug({targetDom: $('#sug'), onQChange: function() {console.log('query change!!!')}});
+}
+</script>
+</body>
+</html>
