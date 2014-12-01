@@ -208,6 +208,8 @@ bds.util.sug.prototype = {
 
     createStyle: function(str) {
         var style = document.createElement('style');
+        // this is important for ie678
+        style.setAttribute('type', 'text/css');
         if (style.styleSheet) {
             style.styleSheet.cssText = str;
         } else {
