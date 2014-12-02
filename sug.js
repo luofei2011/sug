@@ -30,6 +30,7 @@ bds.util.sug = function(options) {
         if (this.op.targetDom.get(0).parentNode && this.op.targetDom.get(0).parentNode.style.position === 'static') {
             this.op.targetDom.get(0).parentNode.style.position = 'relative';
         }
+        this.op.targetDom[0].parentNode.style.zoom = 1;
         var tHeight = this.op.targetDom.get(0).offsetHeight;
         var tWidth = this.op.targetDom.get(0).offsetWidth;
         var offTop = this.op.targetDom.get(0).offsetTop;
@@ -43,7 +44,7 @@ bds.util.sug = function(options) {
     };
 
     this._initStyle = function() {
-        var str = '.util-sug{position:absolute;border:1px solid #ccc;box-shadow:1px 1px 3px #ededed;-moz-box-shadow:1px 1px 3px #ededed;-webkit-box-shadow:1px 1px 3px #ededed;}.util-sug ul{padding:0;margin:0}.util-sug-hover{background:#f0f0f0}.util-sug li{font:14px Arial;line-height:22px;padding:0 8px;position:relative;cursor:default;list-style:none;}';
+        var str = '.util-sug{position:absolute;border:1px solid #ccc;box-shadow:1px 1px 3px #ededed;-moz-box-shadow:1px 1px 3px #ededed;-webkit-box-shadow:1px 1px 3px #ededed;}.util-sug-sort{background:#fafafa;line-height:27px;height:27px}.util-sug ul{padding:0;margin:0}.util-sug-hover{background:#f0f0f0}.util-sug li{font:14px Arial;line-height:22px;padding:0 8px;position:relative;cursor:default;list-style:none;zoom:1}';
         this.createStyle(str);
     };
 
@@ -67,38 +68,114 @@ bds.util.sug = function(options) {
 
     // render the sug list with {{data}}
     this.render = function() {
-        var tpl = '<li data-key="#{0}">#{0}</li>';
-        var html = '';
+        // this tpl template is for sort
+        var tpl = '<li class="util-sug-sort">#{0}</li>';
         var list = null;
+        var _type;
+        var html = "";
 
         if (this.hisKey) {
-            list = this.filter(data.list);
+            list = this.filter(this.op.dataList.list);
+            type = Object.prototype.toString.call(list);
 
-            if (!list.length) {
-                this.op.sugDom.hide();
-            } else {
-                this.showSug();
-            }
-
-            for (var i = 0, len = list.length; i < len; i++) {
-                //html += '<li data-key="'+list[i]+'">'+list[i]+'</li>';
-                html += this.format(tpl, list[i]);
+            if (type === "[object Object]") {
+                if ($.isEmptyObject(list)) {
+                    this.op.sugDom.hide();
+                    return;
+                }
+                for (var o in list) {
+                    html += this.format(tpl, o);
+                    html += this.__render(list[o]);
+                }
+            } else if (type === "[object Array]") {
+                if (!list.length) {
+                    this.op.sugDom.hide();
+                    return;
+                }
+                html += this.__render(list);
             }
             this.op.sugDom.find('ul').eq(0).empty().append(html);
+            this.showSug();
         } else {
             // TODO for top-Q
             this.op.sugDom.hide();
         }
     };
 
+    this.__render = function(list) {
+        var tpl = '<li class="util-sug-item" data-key="#{0}"#{1}>#{0}</li>';
+        var attr = ' data-#{0}=#{1}';
+        var html = '';
+        var data_str = [];
+
+        for (var i = 0, len = list.length; i < len; i++) {
+            if (this.op.dataType === 'object') {
+                for (var _o in list[i]) {
+                    if (list[i].hasOwnProperty(_o) && _o !== this.op.useField) {
+                        data_str.push(this.format(attr, _o, list[i][_o]));
+                    }
+                }
+                html += this.format(tpl, list[i][this.op.useField], data_str.join(''));
+            } else {
+                html += this.format(tpl, list[i]);
+            }
+        }
+
+        return html;
+    };
+
+    // filter matches data 
+    // data filter should be done here! Instead of __filter
     this.filter = function(data) {
-        //var prefix = this.op.targetDom.val();
+        var result = {};
+        var _type = Object.prototype.toString.call(data);
+
+        // the data with sort message
+        if (_type === "[object Object]") {
+            for (var o in data) {
+                if (data.hasOwnProperty(o)) {
+                    result[o] = this.__filter(data[o]);
+                    if (!result[o].length) {
+                        try {
+                            delete result[o];
+                        } catch(e) {}
+                    }
+                }
+            }
+        // common data
+        } else if (_type === "[object Array]") {
+            result = this.__filter(data);
+            // smarty filter
+            if (result.length == 1 && this.op.smartyFilter) {
+                if (this.op.dataType === 'object' && result[0][this.op.useField] === this.hisKey) {
+                    result.length = 0;
+                } else if (result[0] === this.hisKey) {
+                    result.length = 0;
+                }
+            }
+
+        }
+
+        return result;
+    };
+
+    // private function
+    this.__filter = function(data) {
         var prefix = this.hisKey;
         var patten = new RegExp('^' + prefix);
+        var __to = Object.prototype.toString;
         var match = [];
+        var tmp;
 
         for (var i = 0, len = data.length; i < len; i++) {
-            if (patten.test(data[i])) {
+            tmp = data[i];
+            if (__to.call(tmp) === "[object Object]") {
+                tmp = tmp.hasOwnProperty(this.op.useField) ? tmp[this.op.useField] : "";
+                this.op.dataType = 'object';
+            }
+
+            if (patten.test(tmp)) {
+                // important!!! there should be push data[i]
                 match.push(data[i]);
             }
         }
@@ -130,15 +207,14 @@ bds.util.sug = function(options) {
             _this.onQChange && _this.onQChange();
         });
 
-        this.op.sugDom.on('mouseenter', 'li', function() {
+        this.op.sugDom.on('mouseenter', '.util-sug-item', function() {
             var $this = $(this);
             _this.op.sugDom.find('li').removeClass('util-sug-hover') && $this.addClass('util-sug-hover');
-            _this.curIdx = $this;
-        }).on('mouseleave', 'li', function() {
+        }).on('mouseleave', '.util-sug-item', function() {
             var $this = $(this);
             $this.removeClass('util-sug-hover');
         // do what when li has been clicked
-        }).on('click', 'li', function() {
+        }).on('click', '.util-sug-item', function() {
             _this.op.targetDom.trigger('content_change', $(this).attr('data-key'));
         });
 
@@ -152,19 +228,22 @@ bds.util.sug = function(options) {
 
         this.op.targetDom.on('keyup', function(e) {
             e = window.event || e;
-            var $li = _this.op.sugDom.find('li');
+            var $li = _this.op.sugDom.find('.util-sug-item');
             var cur = _this.op.sugDom.find('li.util-sug-hover');
             var active = null;
             // up
             if (e.keyCode == 38) {
-                active = cur.length ? (cur.prev().length ? cur.prev() : [].pop.call($li)) : [].pop.call($li);
+                var prev = cur.prevAll('.util-sug-item').eq(0);
+                active = cur.length ? (prev.length ? prev : [].pop.call($li)) : [].pop.call($li);
             // down
             } else if (e.keyCode == 40) {
-                active = cur.length ? (cur.next().length ? cur.next() : $li.get(0)) : $li.get(0);
+                var next = cur.nextAll('.util-sug-item').eq(0);
+                active = cur.length ? (next.length ? next : $li.get(0)) : $li.get(0);
             }
 
             if (active) {
                 active = $(active);
+                // TODO choose which to use!!!
                 active && active.trigger('mouseenter') && _this.op.targetDom.trigger('content_change.sug', active.attr('data-key'));
             }
 
@@ -178,7 +257,15 @@ bds.util.sug = function(options) {
 bds.util.sug.prototype = {
     // can't use default in ie67
     dft: {
-        targetDom: null
+        dataList: null,
+        targetDom: null,
+        // empty candidate result when there has an only sug
+        smartyFilter: true,
+        // the type of bind data
+        dataType: 'string', // 'object'
+        // which field to use when dataType is 'object'
+        // and other fields where store in data-{{xx}}
+        useField: 'name'
     },
 
     // TODO {{DEEP CLONE}}
@@ -226,3 +313,6 @@ bds.util.sug.prototype = {
         });
     }
 }
+
+// TODO LIST
+// 1. too long
