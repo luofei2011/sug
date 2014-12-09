@@ -9,22 +9,48 @@
 body {
     margin: 0;
     padding: 0;
+    font-family: "微软雅黑";
+    color: #333;
 }
 .sug-form {
     position: relative;
 }
-#sug {
-    margin-left: 10px;
-    padding-left: 7px;
-    /*for ie67*/
-    display: block;
+.item {
+    margin-top: 15px;
 }
-#sug:focus {
+.item input:focus {
     outline: none;
+}
+.item-info {
+    display: inline-block;
+    width: 150px;
+    text-align: right;
+}
+.item-ext {
+    margin-left: 20px;
 }
 </style>
 <div class="sug-form">
-    <input type="text" id="sug" name="sug" autocomplete="false">
+    <div class="item">
+        <span class="item-info">单元数据:</span>
+        <input type="text" class="sug-1" autocomplete=false>
+        <span class="item-ext">如输入字母'a'</span>
+    </div>
+    <div class="item">
+        <span class="item-info">多元数据:</span>
+        <input type="text" class="sug-1" autocomplete=false>
+        <span class="item-ext">如输入“中”</span>
+    </div>
+    <div class="item">
+        <span class="item-info">对象中的单元数据:</span>
+        <input type="text" class="sug-1" autocomplete=false>
+        <span class="item-ext">如输入“中”</span>
+    </div>
+    <div class="item">
+        <span class="item-info">对象中的多元数据:</span>
+        <input type="text" class="sug-1" autocomplete=false>
+        <span class="item-ext">如输入“中(带分类功能)”</span>
+    </div>
 </div>
 <script src="http://cdn.staticfile.org/jquery/1.10.0/jquery.min.js"></script>
 <script src="./sug.js"></script>
@@ -32,7 +58,10 @@ body {
 <script src="./data.js"></script>
 <script>
 window.onload = function() {
-    var sug = new bds.util.sug({dataList: data4, targetDom: $('#sug'), onQChange: function() {console.log('query change!!!')}});
+    var arr = [data1, data2, data3, data4];
+    $('.item input').each(function(i) {
+        new bds.util.sug({dataList: arr[i], targetDom: $(this)});
+    });
 }
 </script>
 </body>

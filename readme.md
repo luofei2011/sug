@@ -11,6 +11,8 @@ var data1 = {
 }
 ```
 
+![1.gif](test/1.gif)
+
 - 多元数组
 ```javascript
 var data2 = {
