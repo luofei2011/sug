@@ -1,6 +1,6 @@
 ### 通用sug组件
 
-你可以在这里看到运行效果: [http://poised-flw.tk/sug/](http://poised-flw.tk/sug/)
+你可以在这里看到运行效果: [http://demo.poised-flw.com/sug/](http://demo.poised-flw.com/sug/)
 
 ### 支持的数据类型
 
